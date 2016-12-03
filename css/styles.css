@@ -1,21 +1,20 @@
 body{
   font-family: "Lato";
-  font-size: 15.5px;
-
   background-image: url("../background.png");
   background-repeat: repeat;
+  font-size: 15.5px;
 }
 
 h1 {
     font-size:35px;
-    color: #1E152A;
+    color: #e0e0e0;
     margin: 0px;
     padding: 0px;
 }
 
 h2{
   margin-bottom: 10px;
-  color: #1E152A;
+  color: #e0e0e0;
 }
 
 #mainDiv h2{
@@ -29,10 +28,15 @@ h2{
   color: #000;
 }
 
+.bars:hover{
+  stroke: #e0e0e0;
+  stroke-width: 2px;
+}
+
 h3{
   margin-bottom: 5px;
   margin-top: 10px;
-  color: #1E152A;
+  color: #e0e0e0;
 }
 
 #age{
@@ -40,7 +44,7 @@ h3{
 }
 
 .axis line{
-  stroke: #1E152A;
+  stroke: #e0e0e0;
 }
 
 .bubble{
@@ -49,23 +53,23 @@ h3{
 }
 
 .bubble:hover{
-  stroke: #fff;
+  stroke: #e0e0e0;
 }
 
 .axis text{
-  fill: #1E152A;
+  fill: #e0e0e0;
   font-size: 14px;
   font-family: "Lato";
 }
 
 .axis path{
-  stroke: #1E152A;
+  stroke: #e0e0e0;
 }
 
 .cities{
-  fill: transparent;
+  fill: white;
   stroke-width: 1px;
-  stroke: #fff;
+  stroke: black;
 }
 
 .state-tooltip-title{
@@ -145,7 +149,7 @@ select:focus, button:focus{
 }
 
 .button{
-background-color: rgb(207,102,0);/*981e00;*/
+background-color: #a58ec4;
 border: none;
 color: white;
 margin-right: 15px;
@@ -249,7 +253,6 @@ footer{
 
 .state .active {
   fill: #1E90FF;
-  display:none;
 }
 
 #state-borders {
@@ -267,13 +270,12 @@ footer{
   stroke-width: .5px;
 }
 
-.state:hover
+.state:hover, .county-boundary:hover
 {
-  fill: rgba(255, 255, 255, 0.25);
   opacity: .7;
+  fill: orange;
 }
 
-.county-boundary:hover
-{
-  opacity: .7;
+#stateg .active {
+  display:none;
 }

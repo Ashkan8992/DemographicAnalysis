@@ -3,7 +3,7 @@ var states_data = [];
 var counties_data = [];
 var filled_array = [];
 var color = null;
-var color_array = ["#5AB1BB", "#1E152A"];
+var color_array = ["#BFD3E6", "#88419D"];
 var first_load = false;
 var curr_year = 0;
 var max_state = null;
@@ -210,6 +210,7 @@ function clicked(d)
   if(active.node() === this)
       {return reset();}
 
+  active.style("fill-opacity", "1");
   active.style("stroke-width", "0.5px");
   active.classed("active", false);
   active = d3.select(this).classed("active", true);
@@ -227,11 +228,13 @@ function clicked(d)
                 .attr('transform', 'translate(' + translate + ') scale(' + scale + ')');
   d3.select('body').select('svg').select('rect').call(zoom);
   active.style("stroke-width", "1.5px");
+  active.style("fill-opacity", "0");
 }
 
 function reset()
 {
   active.style("stroke-width", "0.5px");
+  active.style("fill-opacity", "1");
   active.classed("active", false);
   active = d3.select(null);
 
@@ -488,14 +491,14 @@ function UpdateData()
   }
   else
   {
-    UpdateCharts(year);
+    UpdateChart(year);
   }
 }
 
 function LoadData()
 {
   var base_labels = ["Bachelors", "Divorced", "Graduate/Professional", "HS/GED", "Married", "Never Married", "No HS", "Population", "Separated", "Some College", "Widowed"];
-  var other_labels = ["Geo", "State", "Asian", "Black", "Native Hawaiian and Other Paciffic Islander", "Other", "Total", "Two or More", "White"];
+  var other_labels = ["Geo", "State", "Asian", "Black", "Native Hawaiian and Other Paciffic Islander", "American Indian or Alaskan Native", "Other", "Total", "Two or More", "White"];
   var ages = [];
   var years = ["2010", "2011", "2012", "2013", "2014", "2015"];
   var geo_ = ["States", "Counties"];
@@ -705,10 +708,10 @@ function SecondCharts()
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
-            
+
             var m = states_data[Year][state]["M"];
             var f = states_data[Year][state]["F"];
-            
+
             var male = female = 0;
             for(var j = 18; j < 66; j++)
             {
@@ -741,10 +744,10 @@ function SecondCharts()
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
-            
+
             var f = states_data[Year][state]["F"];
             var m = states_data[Year][state]["M"];
-            
+
             var twenty = thirty = fourty = fifty = sixty = 0;
             for(var j = 18; j < 66; j++)
             {
@@ -805,10 +808,10 @@ function SecondCharts()
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
-            
+
             var f = states_data[Year][state]["F"];
             var m = states_data[Year][state]["M"];
-            
+
             var bach = grad = hs = nohs = coll = 0;
             for(var j = 18; j < 66; j++)
             {
@@ -874,7 +877,7 @@ function SecondCharts()
             var state = state_ids[i];
             var total = states_data[Year][state]["Total"];
             var info = states_data[Year][state];
-            
+
             var asian, black, other, white, two;
 
             asian = info["Asian"] * total;
@@ -926,7 +929,7 @@ function SecondCharts()
 
             var f = states_data[Year][state]["F"];
             var m = states_data[Year][state]["M"];
-            
+
             var div = mar = nomar = sep = wid = 0;
             for(var j = 18; j < 66; j++)
             {
@@ -1012,7 +1015,7 @@ function SecondCharts()
   var yAxis = d3.axisLeft(y);
 
   x.domain(states.map(function(d) { return d; }));
-  y.domain([0, max]);//d3.max(Datas, function(d) { return d[chosen]; })]); 
+  y.domain([0, max]);//d3.max(Datas, function(d) { return d[chosen]; })]);
 
   // Create the axes
   var xxx = d3.selectAll("#xAxis3")
@@ -1061,16 +1064,59 @@ function SecondCharts()
 
 function FirstCharts(curr_year)
 {
+  var char1_width = window.innerWidth - margin.left - margin.right;
+  var char1_height = 400 - margin.bottom - margin.top;
+
 
   //*****Bar Chart*****
-  var svgBounds = d3.select("#barChart").node().getBoundingClientRect();
-
+  var svgBounds = d3.select("#barChart")
+                    .attr("width", char1_width)
+                    .attr("height", char1_height + margin.bottom + margin.top)
+                    //.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
   // selection values
   var state_array = d3.values(states_data[curr_year]);
+  state_array.pop();
+
+  var bar_values = state_array.map(function(d){
+                               var population = (+d["Value"]/100) * (+d["Total"]);
+                               return{
+                                "state":d["Geo"],
+                                "id":abbreviation(d["Geo"]),
+                                "pop":population,
+                                "per":(+d["Value"])
+                               }});
+
+   var bar_tip = d3.tip()
+                   .attr("class", "d3-tip")
+                   .offset([-8, 0])
+                   .html(function(d) {
+                       var rem = (+d.per) % 1;
+                       if(rem > 0.001 && (+d.per) != 0)
+                       {
+                         var value = Math.min(Math.ceil(Math.abs(Math.log10(+d.per))) + 1, 2);
+                         value = (+d.per).toFixed(value) + '%';
+                       }
+                       else
+                       {
+                         var value = (+d.per).toFixed(2) + '%';
+                       }
+                       var pop = NumberWithCommas(parseInt(d.pop));
+                       var str = '<div class="state-tooltip-title">' +
+                       d.state + '</div>'
+                       + '<span class=state-label-P>Percentage: </span>'
+                       + '<span class=state-value-P>' + value + '</span><br/>'
+                       + '<span class=state-label-P>Matching Population: </span>'
+                       + '<span class=state-value-P>' + pop + '</span>';
+                       return str;
+                     });
+
+    var svg = d3.select("#barChart");
+    svg.call(bar_tip);
+/*
   var selection = [];
   for(var i = 0; i < 51; i++)
   {
-      selection.push(state_array[i]["Value"] * state_array[i]["Total"] / 1000);
+      selection.push(state_array[i]["Value"] * 100);
   }
   // all the keys
   var state_ids = Object.keys(states_data[curr_year]);
@@ -1082,62 +1128,84 @@ function FirstCharts(curr_year)
       var name_temp = states_data[curr_year][state]["Geo"];
       states.push(abbreviation(name_temp));
   }
+  */
+
+  var min = d3.min(bar_values, function(d) { return d.per; });
+  var max = d3.max(bar_values, function(d) { return d.per; });
 
   //******************************************************
 
   // Create the x and y scales
-  var margin = {top: 0, right: 0, bottom: 50, left: 70},
-    width = svgBounds.width - margin.left - margin.right,
-    height = svgBounds.height - margin.top - margin.bottom;
 
-  var x = d3.scaleBand().rangeRound([0, width]).paddingInner(0.05);
-  var y = d3.scaleLinear().range([height, 0]).domain([0, max]);
+  var x = d3.scaleBand().rangeRound([0, char1_width - margin.right - margin.left])
+                        .paddingInner(0.10)
+                        .domain(bar_values.map(function(d) {return d.id;}));
+  var y = d3.scaleLinear().range([char1_height, 0])
+                          .domain([0, max * 1.1]);
+
 
   var xAxis = d3.axisBottom(x);
-  var yAxis = d3.axisLeft(y);
-
-  // Create colorScale
-  var min = d3.min(selection, function(d) { return d; });
-  var max = d3.max(selection, function(d) { return d; });
-  var colorScale = d3.scaleLinear()
-              .domain([min, max])
-              .range(color_array);
-
-  x.domain(states.map(function(d) { return d; }));
-  y.domain([0, max]);
+  var yAxis = d3.axisLeft(y)
+                .tickFormat(function(d) {
+                  var rem = d % 1;
+                  if (rem > 0.0001)
+                  {
+                    var temp = Math.ceil(Math.abs(Math.log10(rem))) + 1;
+                    return d.toFixed(temp) + '%';
+                  }
+                  else
+                  {
+                    return d + '%';
+                  }});
 
   // Create the axes
   var xxx = d3.selectAll("#xAxis1")
-    .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + "," + height + ")")
-    .call(xAxis)
-    .selectAll("text")
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", "-.55em")
-    .attr("transform", "rotate(-90)" );
+              .classed("axis", true)
+              .attr("transform", "translate(" + margin.left + "," + char1_height + ")")
+              .transition().duration(1000)
+              .call(xAxis)
+              .selectAll("text")
+              .style("text-anchor", "end")
+              .attr("dx", "-.8em")
+              .attr("dy", "-.3em")
+              .attr("transform", "rotate(-90)" );
 
   var yyy = d3.selectAll("#yAxis1")
-    .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + ",0)")
-    .call(yAxis);
+              .classed("axis", true)
+              .attr("transform", "translate(" + margin.left + ",0)")
+              .transition().duration(1000)
+              .call(yAxis);
 
   // Create the bars
   var bars = d3.select("#barChart").selectAll("rect")
-      .data(selection);
+                                   .data(bar_values);
   bars.exit().remove();
-  bars = bars.enter().append("rect").merge(bars);
+  bars = bars.enter()
+             .append("rect")
+             .merge(bars);
 
   bars.attr("transform", "translate(" + margin.left + ",0)")
-      .attr("x", function(d, i) { return x(states[i]); })
+      .attr("x", function(d)
+                  {
+                    return x(d.id);
+                  })
       .attr("width", x.bandwidth())
-      .transition().duration(3000)
-      .style("fill", function(d) { return colorScale(d); })
-      .attr("y", function(d) { return y(d); })
-      .attr("height", function(d) { return height - y(d); })
-      .attr("opacity", 1);
-  //    .on('mouseover', tip.show)
-  //    .on('mouseout', tip.hide);
+      .classed("bars", true)
+      .on("mouseover", function(d) {bar_tip.show(d)})
+      .on("mouseout", function(d) {bar_tip.hide(d)})
+            .attr("opacity", 1)
+      .transition().duration(1000)
+      .attr("y", function(d) {return y(d.per)})
+      .style("fill", function(d)
+                      {
+                        return color(d.per);
+                      })
+      .attr("height", function(d)
+                      {
+                        return char1_height - y(d.per);
+                      });
+
+
 
   //self.svg.call(tip);
 
@@ -1164,8 +1232,8 @@ function FirstCharts(curr_year)
   var yAxis = d3.axisLeft(y);
 
   x.domain(["2010", "2011", "2012", "2013"]);//Datas(function(d) { return d[0]; }));
-  y.domain([0, max]);//d3.max(Datas, function(d) { return d[chosen]; })]); 
-  
+  y.domain([0, max]);//d3.max(Datas, function(d) { return d[chosen]; })]);
+
   // Create the axes
   var xxx = d3.selectAll("#xAxis2")
     .classed("axis", true)
@@ -1197,65 +1265,60 @@ function FirstCharts(curr_year)
 
 function abbreviation(input)
 {
-  var states = [
-        ['Arizona', 'AZ'],
-        ['Alabama', 'AL'],
-        ['Alaska', 'AK'],
-        ['Arizona', 'AZ'],
-        ['Arkansas', 'AR'],
-        ['California', 'CA'],
-        ['Colorado', 'CO'],
-        ['Connecticut', 'CT'],
-        ['Delaware', 'DE'],
-        ['District of Columbia', 'DC'],
-        ['Florida', 'FL'],
-        ['Georgia', 'GA'],
-        ['Hawaii', 'HI'],
-        ['Idaho', 'ID'],
-        ['Illinois', 'IL'],
-        ['Indiana', 'IN'],
-        ['Iowa', 'IA'],
-        ['Kansas', 'KS'],
-        ['Kentucky', 'KY'],
-        ['Kentucky', 'KY'],
-        ['Louisiana', 'LA'],
-        ['Maine', 'ME'],
-        ['Maryland', 'MD'],
-        ['Massachusetts', 'MA'],
-        ['Michigan', 'MI'],
-        ['Minnesota', 'MN'],
-        ['Mississippi', 'MS'],
-        ['Missouri', 'MO'],
-        ['Montana', 'MT'],
-        ['Nebraska', 'NE'],
-        ['Nevada', 'NV'],
-        ['New Hampshire', 'NH'],
-        ['New Jersey', 'NJ'],
-        ['New Mexico', 'NM'],
-        ['New York', 'NY'],
-        ['North Carolina', 'NC'],
-        ['North Dakota', 'ND'],
-        ['Ohio', 'OH'],
-        ['Oklahoma', 'OK'],
-        ['Oregon', 'OR'],
-        ['Pennsylvania', 'PA'],
-        ['Rhode Island', 'RI'],
-        ['South Carolina', 'SC'],
-        ['South Dakota', 'SD'],
-        ['Tennessee', 'TN'],
-        ['Texas', 'TX'],
-        ['Utah', 'UT'],
-        ['Vermont', 'VT'],
-        ['Virginia', 'VA'],
-        ['Washington', 'WA'],
-        ['West Virginia', 'WV'],
-        ['Wisconsin', 'WI'],
-        ['Wyoming', 'WY'],
-  ];
-
-  for(i = 0; i < states.length; i++){
-      if(states[i][0] == input){
-            return(states[i][1]);
-      }
-  }
+  var states = {
+        'Arizona':'AZ',
+        'Alabama':'AL',
+        'Alaska':'AK',
+        'Arizona':'AZ',
+        'Arkansas':'AR',
+        'California':'CA',
+        'Colorado':'CO',
+        'Connecticut':'CT',
+        'Delaware':'DE',
+        'District of Columbia':'DC',
+        'Florida':'FL',
+        'Georgia':'GA',
+        'Hawaii':'HI',
+        'Idaho':'ID',
+        'Illinois':'IL',
+        'Indiana':'IN',
+        'Iowa':'IA',
+        'Kansas':'KS',
+        'Kentucky':'KY',
+        'Kentucky':'KY',
+        'Louisiana':'LA',
+        'Maine':'ME',
+        'Maryland':'MD',
+        'Massachusetts':'MA',
+        'Michigan':'MI',
+        'Minnesota':'MN',
+        'Mississippi':'MS',
+        'Missouri':'MO',
+        'Montana':'MT',
+        'Nebraska':'NE',
+        'Nevada':'NV',
+        'New Hampshire':'NH',
+        'New Jersey':'NJ',
+        'New Mexico':'NM',
+        'New York':'NY',
+        'North Carolina':'NC',
+        'North Dakota':'ND',
+        'Ohio':'OH',
+        'Oklahoma':'OK',
+        'Oregon':'OR',
+        'Pennsylvania':'PA',
+        'Rhode Island':'RI',
+        'South Carolina':'SC',
+        'South Dakota':'SD',
+        'Tennessee':'TN',
+        'Texas':'TX',
+        'Utah':'UT',
+        'Vermont':'VT',
+        'Virginia':'VA',
+        'Washington':'WA',
+        'West Virginia':'WV',
+        'Wisconsin':'WI',
+        'Wyoming':'WY',
+  };
+  return states[input];
 }
