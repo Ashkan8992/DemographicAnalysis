@@ -2,12 +2,14 @@ var percent_width = 0.7;
 var states_data = [];
 var counties_data = [];
 var filled_array = [];
+var geo_labels = {};
 var color = null;
 var color_array = ["#BFD3E6", "#88419D"];
 var first_load = false;
 var curr_year = 0;
 var max_state = null;
 var max_county = null;
+var val_sorted = false;
 
 Array.prototype.insert = function(index, item)
 {
@@ -19,10 +21,11 @@ function NumberWithCommas(x)
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-//var DATA_BASE_DIR = "/DemographicAnalysis/Data/"; // Use this value for hosting on GitHub
-var DATA_BASE_DIR = "/Data/" // For "local" hosting
+var DATA_BASE_DIR = "/DemographicAnalysis/Data/"; // Use this value for hosting on GitHub
+//var DATA_BASE_DIR = "/Data/" // For "local" hosting
 var us_json_file = DATA_BASE_DIR + "us.json";
 var cities_file = DATA_BASE_DIR + "major_cities.csv";
+var tags_file = DATA_BASE_DIR + "tags.csv";
 
 var mapSVG = document.getElementById("#map");
 
@@ -43,10 +46,20 @@ var city_tip = d3.tip()
                  .offset([-8, 0])
                  .html(function(d) { return d["city"]; });
 
-var state_tip = d3.tip()
-               .attr("class", "d3-tip")
-               .offset([-8, 0])
-               .html(function(d) {
+var geo_tip = d3.tip()
+                .attr("class", "d3-tip")
+                .offset([-8, 0])
+                .html(function(d) {
+
+                 if(d.id < 1000)
+                 {
+                   var id = d.id * 1000;
+                 }
+                 else
+                 {
+                   var id = d.id;
+                 }
+
                  if(curr_year == 0)
                  {
                    var value = "N/A";
@@ -55,12 +68,31 @@ var state_tip = d3.tip()
                  }
                  else
                  {
-                   var value = states_data[curr_year][d.id * 1000]["Value"].toFixed(2) + '%';
-                   var pop = NumberWithCommas(states_data[curr_year][d.id * 1000]["Total"]);
-                   var num = NumberWithCommas(parseInt(states_data[curr_year][d.id * 1000]["Value"]/100 * states_data[curr_year][d.id * 1000]["Total"]));
+                   try
+                   {
+                     if(d.id < 1000)
+                     {
+                       var value = states_data[curr_year][id]["Value"].toFixed(2) + '%';
+                       var pop = NumberWithCommas(states_data[curr_year][id]["Total"]);
+                       var num = NumberWithCommas(parseInt(states_data[curr_year][id]["Value"]/100 * states_data[curr_year][id]["Total"]));
+                     }
+                     else
+                     {
+                       var value = counties_data[curr_year][id]["Value"].toFixed(2) + '%';
+                       var pop = NumberWithCommas(counties_data[curr_year][id]["Total"]);
+                       var num = NumberWithCommas(parseInt(counties_data[curr_year][id]["Value"]/100 * counties_data[curr_year][id]["Total"]));
+                     }
+                   }
+                   catch(err)
+                   {
+                     var value = "N/A";
+                     var pop = "N/A";
+                     var num = "N/A";
+                   }
                  }
+
                  var str = '<div class="state-tooltip-title">' +
-                 states_data[2015][d.id * 1000]["Geo"] + '</div>'
+                 geo_labels[id] + '</div>'
                  + '<span class=state-label-P>Percentage: </span>'
                  + '<span class=state-value-P>' + value + '</span><br/>'
                  + '<span class=state-label-P>Total Population: </span>'
@@ -69,34 +101,6 @@ var state_tip = d3.tip()
                  + '<span class=state-value-P>' + num + '</span>';
                  return str;
                });
-
-
-var county_tip = d3.tip()
-              .attr("class", "d3-tip")
-              .offset([-8, 0])
-              .html(function(d) {
-                if(curr_year == 0)
-                {
-                  var value = "N/A";
-                  var pop = "N/A";
-                  var num = "N/A";
-                }
-                else
-                {
-                  var value = counties_data[curr_year][d.id]["Value"].toFixed(2) + '%';
-                  var pop = NumberWithCommas(counties_data[curr_year][d.id]["Total"]);
-                  var num = NumberWithCommas(parseInt(counties_data[curr_year][d.id]["Value"]/100 * counties_data[curr_year][d.id]["Total"]));
-                }
-                var str = '<div class="county-tooltip-title">' +
-                counties_data[2015][d.id * 1000]["Geo"] + '</div>'
-                + '<span class=county-label-P>Percentage: </span>'
-                + '<span class=county-value-P>' + value + '</span><br/>'
-                + '<span class=county-label-P>Total Population: </span>'
-                + '<span class=county-value-P>' + pop + '</span><br/>'
-                + '<span class=county-label-P>Matching Population: </span>'
-                + '<span class=county-value-P>' + num + '</span>';
-                return str;
-              });
 
 var projection = d3.geoAlbersUsa()
     .scale(Math.min(window_width - 100, 1500))
@@ -121,10 +125,19 @@ svg.append("rect")
     .on("click", reset);
 
 svg.call(city_tip);
-svg.call(state_tip);
-svg.call(county_tip);
+svg.call(geo_tip);
 
 var g = svg.append("g");
+
+d3.csv(tags_file, function(error, tag)
+{
+  for(var i = 0; i < tag.length; i++)
+  {
+    var temp_id = tag[i].id;
+    var temp_geo = tag[i].location;
+    geo_labels[temp_id] = temp_geo;
+  }
+});
 
 d3.json(us_json_file, function(error, us)
 {
@@ -137,8 +150,8 @@ d3.json(us_json_file, function(error, us)
     .attr("class", "county-boundary")
     .attr("id", function(d){return d.id})
     .on("click", reset)
-    .on("mouseover", function(d) {county_tip.show(d);})
-    .on("mouseout", function(d) {county_tip.hide(d);})
+    .on("mouseover", function(d) {geo_tip.show(d);})
+    .on("mouseout", function(d) {geo_tip.hide(d);})
     .on("contextmenu", function (d, i) {
         d3.event.preventDefault();});
 
@@ -151,8 +164,8 @@ d3.json(us_json_file, function(error, us)
     .attr("class", "state")
     .attr("id", function(d){return d.id * 1000;})
     .on("click", clicked)
-    .on("mouseover", function(d) {state_tip.show(d);})
-    .on("mouseout", function(d) {state_tip.hide(d);})
+    .on("mouseover", function(d) {geo_tip.show(d);})
+    .on("mouseout", function(d) {geo_tip.hide(d);})
     .on("contextmenu", function (d, i) {
         d3.event.preventDefault();
         if(filled_array[d.id * 1000] == true && curr_year != 0)
@@ -260,7 +273,7 @@ function CalculatePopulation(ages, genValues, eduValues, raceValues, marValues)
   for(var yr_idx = 0; yr_idx < years.length; yr_idx++)
   {
     var year = years[yr_idx];
-    var state_ids = Object.keys(states_data[year]);
+    state_ids = Object.keys(states_data[year]);
     for(var st_idx = 0; st_idx < state_ids.length; st_idx++)
     {
       var state = state_ids[st_idx];
@@ -577,6 +590,7 @@ function ReadStates(BASE_DIR, FILE_EXT, years, geo_, genders, ages, base_labels,
     });
   }
   states_data = year_data;
+  stt = states_data;
 }
 
 function ReadCounties(BASE_DIR, FILE_EXT, years, geo_, genders, ages, base_labels, other_labels)
@@ -680,7 +694,7 @@ function colorMap(year){
 function SecondCharts()
 {
   //*****Bar Chart*****
-  var svgBounds = d3.select("#barChart").node().getBoundingClientRect();
+  var svgBounds = d3.select("#stackBarChart").node().getBoundingClientRect();
 
   //year
   var Year = d3.select("#year-sec").node().value;
@@ -688,7 +702,7 @@ function SecondCharts()
   var selectedData = d3.select("#dataset").node().value;
 
   // all the keys
-  var state_ids = Object.keys(states_data[Year]);
+  state_ids = Object.keys(states_data[Year]);
 
   var states = [];
   var array = [];
@@ -696,6 +710,7 @@ function SecondCharts()
   var array3 = [];
   var array4 = [];
   var array5 = [];
+  var leg = [];
   for(var i = 0; i < state_ids.length; i++)
   {
       var state = state_ids[i];
@@ -705,6 +720,7 @@ function SecondCharts()
 
   switch(selectedData) {
     case "gender":
+        leg = ["Male", "Female"];
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
@@ -729,6 +745,9 @@ function SecondCharts()
             female = Math.round(female/1000);
             array.push(male);
             array2.push(female);
+            array3.push(0);
+            array4.push(0);
+            array5.push(0);
         }
         var sum = [];
         for(var i = 0; i <= 50; i++)
@@ -738,9 +757,25 @@ function SecondCharts()
           array.push(array2[i]);
           sum.push(array[i] + array2[i]);
         }
+        for(var i = 0; i <= 50; i++)
+        {
+          array.push(array3[i]);
+          sum.push(array[i] + array2[i] + array3[i]);
+        }
+        for(var i = 0; i <= 50; i++)
+        {
+          array.push(array4[i]);
+          sum.push(array[i] + array2[i] + array3[i] + array4[i]);
+        }
+        for(var i = 0; i <= 50; i++)
+        {
+          array.push(array5[i]);
+          sum.push(array[i] + array2[i] + array3[i] + array4[i] + array5[i]);
+        }
         break;
 
     case "age":
+        leg = ["18-29", "30-39", "40-49", "50-59", "60-65+"];
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
@@ -805,6 +840,7 @@ function SecondCharts()
         break;
 
     case "edu":
+        leg = ["No High School", "High School/GED", "Some College", "Bachelor's", "Graduate/Professional"];
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
@@ -872,6 +908,7 @@ function SecondCharts()
         break;
 
     case "race":
+        leg = ["White", "Black", "Asian", "Other Races", "Two or more Races"];
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
@@ -923,6 +960,7 @@ function SecondCharts()
         break;
 
     case "marital":
+        leg = ["Married", "Seperated", "Widowed", "Divorced", "Never Married"];
         for(var i = 0; i < state_ids.length; i++)
         {
             var state = state_ids[i];
@@ -989,12 +1027,20 @@ function SecondCharts()
         }
   }
 
+  for(var i = 0; i < sum.length; i++)
+    {
+      sum[i] = Math.round(sum[i]/1000);
+      array[i] = Math.round(array[i]/1000);
+    }
 
   //**********************************************
   // Create the x and y scales
-  var margin = {top: 0, right: 0, bottom: 50, left: 70},
-    width = svgBounds.width - margin.left - margin.right,
-    height = svgBounds.height - margin.top - margin.bottom;
+  var width = window.innerWidth - margin.left - margin.right - 200;
+  var height = 400 - margin.bottom - margin.top;
+
+  var svgBounds = d3.select("#stackBarChart")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom + 200)
 
   var max = 0
   for(var i = 0; i < sum.length; i++)
@@ -1008,7 +1054,7 @@ function SecondCharts()
       .range([height, 0])
       .domain([0, max]);
   var coloring = d3.scaleLinear()
-      .range(["royalblue", "crimson", "olive", "orangered", "purple"])
+      .range(["#a58ec4", "#bfadd8", "#992288", "#441188", "#bbdddd"])
       .domain([1, 2, 3, 4, 5]);
 
   var xAxis = d3.axisBottom(x);
@@ -1020,7 +1066,7 @@ function SecondCharts()
   // Create the axes
   var xxx = d3.selectAll("#xAxis3")
     .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + "," + height + ")")
+    .attr("transform", "translate(" + margin.left + "," + (height+10) + ")")
     .call(xAxis)
     .selectAll("text")
     .style("text-anchor", "end")
@@ -1030,16 +1076,28 @@ function SecondCharts()
 
   var yyy = d3.selectAll("#yAxis3")
     .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + ",0)")
+    .attr("transform", "translate(" + margin.left + ",10)")
     .call(yAxis);
 
+  yyy.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - margin.left)
+    .attr("x",0 - (height / 2))
+    .attr("dy", "1em")
+    .style("text-anchor", "middle")
+    .style("font", "16px sans-serif")
+    .text("Population (million)");
+
   // Create the bars
+  array = array.reverse();
+  sum = sum.reverse();
+  states = states.reverse();
   var bars = d3.select("#stackBarChart").selectAll("rect")
       .data(array);
   bars.exit().remove();
   bars = bars.enter().append("rect").merge(bars);
 
-  bars.attr("transform", "translate(" + margin.left + ",0)")
+  bars.attr("transform", "translate(" + margin.left + ",10)")
       .attr("x", function(d, i) { return x(states[i%51]); })
       .attr("width", x.bandwidth())
       .transition().duration(3000)
@@ -1055,12 +1113,68 @@ function SecondCharts()
                             else
                               return coloring(5);
        })
-      .attr("height", function(d, i) { return height - y(d); })
+      .attr("height", function(d, i) { return height - y(sum[i]); })
       .attr("y", function(d, i) {
           return y(sum[i]);
       })
       .attr("opacity", 1);
+
+
+
+  var col = d3.scaleOrdinal()
+    .range(["#a58ec4", "#bfadd8", "#992288", "#441188", "#bbdddd"]);
+    col.domain(leg);
+
+  temp = [];
+  var legend = d3.select("#stackBarChart").selectAll(".legend")
+      .data(temp);
+
+  legend.exit().remove();
+
+  legend = legend.enter().append("g").merge(legend)
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .style("font", "16px sans-serif");
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .attr("fill", col);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".70em")
+      .attr("text-anchor", "end")
+      .attr("fill", "white")
+      .text(function(d) { return d; });
+
+  var legend = d3.select("#stackBarChart").selectAll(".legend")
+      .data(leg.reverse());
+
+  legend.exit().remove();
+
+  legend = legend.enter().append("g").merge(legend)
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .style("font", "16px sans-serif");
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .attr("fill", col);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".70em")
+      .attr("text-anchor", "end")
+      .attr("fill", "white")
+      .text(function(d) { return d; });
 }
+
 
 function FirstCharts(curr_year)
 {
@@ -1086,6 +1200,8 @@ function FirstCharts(curr_year)
                                 "per":(+d["Value"])
                                }});
 
+   bar_values = bar_values.sort(function(a, b) {return d3.descending(b.id, a.id)});
+
    var bar_tip = d3.tip()
                    .attr("class", "d3-tip")
                    .offset([-8, 0])
@@ -1110,25 +1226,8 @@ function FirstCharts(curr_year)
                        return str;
                      });
 
-    var svg = d3.select("#barChart");
-    svg.call(bar_tip);
-/*
-  var selection = [];
-  for(var i = 0; i < 51; i++)
-  {
-      selection.push(state_array[i]["Value"] * 100);
-  }
-  // all the keys
-  var state_ids = Object.keys(states_data[curr_year]);
-
-  var states = [];
-  for(var i = 0; i < state_ids.length; i++)
-  {
-      var state = state_ids[i];
-      var name_temp = states_data[curr_year][state]["Geo"];
-      states.push(abbreviation(name_temp));
-  }
-  */
+  var svg = d3.select("#barChart");
+  svg.call(bar_tip);
 
   var min = d3.min(bar_values, function(d) { return d.per; });
   var max = d3.max(bar_values, function(d) { return d.per; });
@@ -1140,8 +1239,8 @@ function FirstCharts(curr_year)
   var x = d3.scaleBand().rangeRound([0, char1_width - margin.right - margin.left])
                         .paddingInner(0.10)
                         .domain(bar_values.map(function(d) {return d.id;}));
-  var y = d3.scaleLinear().range([char1_height, 0])
-                          .domain([0, max * 1.1]);
+  var y = d3.scaleLinear().range([char1_height - margin.top, 0])
+                          .domain([0, max]);
 
 
   var xAxis = d3.axisBottom(x);
@@ -1172,13 +1271,13 @@ function FirstCharts(curr_year)
 
   var yyy = d3.selectAll("#yAxis1")
               .classed("axis", true)
-              .attr("transform", "translate(" + margin.left + ",0)")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
               .transition().duration(1000)
               .call(yAxis);
 
   // Create the bars
-  var bars = d3.select("#barChart").selectAll("rect")
-                                   .data(bar_values);
+  var bars = d3.select("#barChart").selectAll("rect").data(bar_values);
+
   bars.exit().remove();
   bars = bars.enter()
              .append("rect")
@@ -1205,62 +1304,61 @@ function FirstCharts(curr_year)
                         return char1_height - y(d.per);
                       });
 
+   var names = d3.select("#xAxis1").selectAll("text").on("click", SortName)
+                                                     .on("mouseover", function(d) {
+                                                       d3.select(this).style("cursor", "pointer");
+                                                     })
+                                                     .on("mouseout", function(d) {
+                                                       d3.select(this).style("cursor", "default")
+                                                     });
+   var vals = d3.select("#yAxis1").selectAll("text").on("click", SortValue)
+                                                    .on("mouseover", function(d) {
+                                                       d3.select(this).style("cursor", "pointer");
+                                                     })
+                                                     .on("mouseout", function(d) {
+                                                       d3.select(this).style("cursor", "default")
+                                                     });
 
+   var temp_bars = bar_values;
 
-  //self.svg.call(tip);
+   function SortName()
+   {
+     var bar_values = temp_bars.sort(function(a, b) {return d3.descending(b.id, a.id)});
+     var x0 = x.domain(bar_values.map(function(d) {return d.id;})).copy();
 
+     svg.selectAll(".bars").sort(function(a, b) {return x0(b.id) - x0(a.id)});
 
-  //*****Line Chart*****
-  /*var svgBounds = d3.select("#lineChart").node().getBoundingClientRect();
+     var transition = svg.transition().duration(750),
+              delay = function(d, i) {return i * 50};
 
-  //Data
-  var Datas2 = [["2010", 100], ["2011", 500], ["2012", 300], ["2013", 250]];
-  //var chosen = document.getElementById("dataset").value;
-  var chosen = 1;
+     transition.selectAll(".bars")
+               .delay(delay)
+               .attr("x", function(d) {return x0(d.id);});
 
-  var max = 0
-  for(var i = 0; i < Datas2.length; i++)
-  {
-      if(Datas2[i][chosen] > max)
-          max = Datas2[i][chosen];
-  }
+     transition.select("#xAxis1").call(xAxis).selectAll("g").delay(delay);
 
-  var x = d3.scaleBand().rangeRound([0, width]).paddingInner(0.05);
-  var y = d3.scaleLinear().range([height, 0]).domain([0, max]);
+     temp_bars = bar_values;
+   }
 
-  var xAxis = d3.axisBottom(x);
-  var yAxis = d3.axisLeft(y);
+   function SortValue()
+   {
+     var bar_values_v = temp_bars.sort(function(a,b) {return b.per - a.per});
 
-  x.domain(["2010", "2011", "2012", "2013"]);//Datas(function(d) { return d[0]; }));
-  y.domain([0, max]);//d3.max(Datas, function(d) { return d[chosen]; })]);
+     var x0 = x.domain(bar_values_v.map(function(d) {return d.id;})).copy();
 
-  // Create the axes
-  var xxx = d3.selectAll("#xAxis2")
-    .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + "," + height + ")")
-    .call(xAxis)
-    .selectAll("text")
-    .style("text-anchor", "end")
-    .attr("dx", "-.8em")
-    .attr("dy", "-.55em")
-    .attr("transform", "rotate(-90)" );
+     svg.selectAll(".bars").sort(function(a, b) {return x0(b.id) - x0(a.id)});
 
-  var yyy = d3.selectAll("#yAxis2")
-    .classed("axis", true)
-    .attr("transform", "translate(" + margin.left + ",0)")
-    .call(yAxis);*/
+     var transition = svg.transition().duration(750),
+              delay = function(d, i) {return i * 50};
 
-  /*var lines = d3.select("#lineChart")
-      .selectAll("line").data(Datas2);
+     transition.selectAll(".bars")
+               .delay(delay)
+               .attr("x", function(d) {return x0(d.id);});
 
-  lines.exit().remove();
-  lines = lines.enter().append("line")
-      .attr("transform", "translate(" + margin.left + ",0)")
-      .attr("x1", function(d,i) { return x(d[0]); })
-      .attr("x2", function(d) { return height - y(d[chosen]); })
-      .attr("y1", function(d,i) { return x(d[0]); })
-      .attr("y2", function(d) { return height - y(d[chosen]); })
-      .attr("opacity", 1);*/
+     transition.select("#xAxis1").call(xAxis).selectAll("g").delay(delay);
+
+     temp_bars = bar_values_v;
+   }
 }
 
 function abbreviation(input)

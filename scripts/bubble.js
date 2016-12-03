@@ -137,7 +137,7 @@ function BubbleChart(year)
   }
 
   var x_scale = d3.scaleLinear()
-                 .domain([min_val * 0.8, max_per * 1.1])
+                 .domain([min_val * .95, max_per * 1.05])
                  .range([margin.left, bbl_width - margin.right])
                  .nice();
 
@@ -260,7 +260,7 @@ function UpdateChart(year)
 
 
   var x_scale = d3.scaleLinear()
-                 .domain([min_val * 0.8, max_per * 1.1])
+                 .domain([min_val * .95, max_per * 1.05])
                  .range([margin.left, bbl_width - margin.right])
                  .nice();
   xScale = x_scale;

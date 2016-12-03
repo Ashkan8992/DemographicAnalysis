@@ -5,35 +5,28 @@
     <meta charset="utf-8">
     <title>Demographic Analysis</title>
 
-    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Lato">
     <link href='https://fonts.googleapis.com/css?family=Raleway:100,300' rel='stylesheet' type='text/css'>
   	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-
-    <link rel="stylesheet" href="/css/styles.css"/>
-    <link rel="stylesheet" href="/css/jquery.range.css">
-    <script src="/scripts/jquery.range.js"></script>
-
-    <!--
-    [Use these for GitHub Hosting]
 
     <link rel="stylesheet" href="/DemographicAnalysis/css/styles.css"/>
     <link rel="stylesheet" href="/DemographicAnalysis/css/jquery.range.css">
     <script src="/DemographicAnalysis/scripts/jquery.range.js"></script>
-    -->
+
 </head>
 
 <body>
 
 <h1><center>Demographic Analysis 2010 to 2015</center></h1>
 
-<link rel="icon" href="/favicon.ico">
+<link rel="icon" href="/DemographicAnalysis/favicon.ico">
 <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
 <script src="https://d3js.org/topojson.v1.min.js" charset="utf-8"></script>
-<script src="/scripts/d3-tip.js"></script>
-<script type="application/javascript" src="/scripts/script.js"></script>
-<script type="application/javascript" src="/scripts/bubble.js"></script>
-<script type="text/javascript" src="/fancybox/source/jquery.fancybox.pack.js"></script>
-<link rel="stylesheet" href="/fancybox/source/jquery.fancybox.css" type="text/css" media="screen"/>
+<script src="/DemographicAnalysis/scripts/d3-tip.js"></script>
+<script type="application/javascript" src="/DemographicAnalysis/scripts/script.js"></script>
+<script type="application/javascript" src="/DemographicAnalysis/scripts/bubble.js"></script>
+<script type="text/javascript" src="/DemographicAnalysis/fancybox/source/jquery.fancybox.pack.js"></script>
+<link rel="stylesheet" href="/DemographicAnalysis/fancybox/source/jquery.fancybox.css" type="text/css" media="screen"/>
 
 <!-- <script type="application/javascript" src="/DemographicAnalysis/scripts/script.js"></script>  [Use this for GitHub Hosting] -->
 
@@ -47,7 +40,7 @@ $(document).ready(function () {
             'transitionIn': 'fade',
             'transitionOut': 'fade',
             'type': 'iframe',
-            'href': '/intro.html'
+            'href': '/DemographicAnalysis/intro.html'
         });
 });
 </script>
@@ -55,11 +48,11 @@ $(document).ready(function () {
 
 <div id="mainDiv">
   <div id="selection">
-      <h2 id="edition">Attribute Selection</h2>
+      <center><h2 id="edition">Attribute Selection</h2></center>
       <h3>Year</h3>
       <div id="year">
         <input id="year-slider" type="hidden" class="single-slider" value="2015" onchange="UpdateData()"/>
-          <script src="/scripts/jquery.range.js"></script>
+          <script src="/DemographicAnalysis/scripts/jquery.range.js"></script>
           <script>
             $('.single-slider').jRange({
             from: 2010,
@@ -85,8 +78,8 @@ $(document).ready(function () {
       <br>
       <!-- Adapted from https://github.com/nitinhayaran/jRange -->
       <div id="age"><input id="age-slider" type="hidden" class="range-slider" value="33.5,49" />
-        <script src="/scripts/jquery.range.js"></script>
-        <!-- <script src="/DemographicAnalysis/scripts/jquery.range.js"></script> [Use this for GitHub Hosting]-->
+        <!-- <script src="/scripts/jquery.range.js"></script> -->
+        <script src="/DemographicAnalysis/scripts/jquery.range.js"></script>
         <script>
         $('.range-slider').jRange({
           from: 18,
@@ -118,8 +111,8 @@ $(document).ready(function () {
   	<input class="race_checkbox" type="checkbox" name="race" value="White">White</input><br>
   	<input class="race_checkbox" type="checkbox" name="race" value="Black">Black</input><br>
   	<input class="race_checkbox" type="checkbox" name="race" value="Asian">Asian</input><br>
-  	<input class="race_checkbox" type="checkbox" name="race" value="American Indian or Alaskan Native">American Indian/Alaskan Native</input><br>
-  	<input class="race_checkbox" type="checkbox" name="race" value="Native Hawaiian and Other Paciffic Islander">Native Hawaiians/Pacific Islanders</input><br>
+  	<!-- <input class="race_checkbox" type="checkbox" name="race" value="American Indian or Alaskan Native">American Indian/Alaskan Native</input><br>
+  	<input class="race_checkbox" type="checkbox" name="race" value="Native Hawaiian and Other Paciffic Islander">Native Hawaiians/Pacific Islanders</input><br> -->
     <input class="race_checkbox" type="checkbox" name="race" value="Other">Other Races</input><br>
   	<input class="race_checkbox" type="checkbox" name="race" value="Two or More">Two or More Races</input>
   	</form>
@@ -140,14 +133,11 @@ $(document).ready(function () {
 </div>
 <br>
 <div id="plots">
-    <h2>Plots</h2>
-
     <center>
     <svg id="dist-plot">
     </svg></center><br>
 
-    <svg width="100" height="10%">
-        <g id="points"></g>
+    <svg width="100" height="50px">
     </svg>
 
     <svg id="barChart" width="1100" height="400">
@@ -176,12 +166,12 @@ $(document).ready(function () {
   <tr>
     <td>      <div id="year-chooser">
               <select id="year-sec" onchange="SecondCharts()">
-                  <option selected value="2010">2010</option>
-                  <option value="2011">2011</option>
-                  <option value="2012">2012</option>
-                  <option value="2013">2013</option>
+                  <option selected value="2015">2015</option>
                   <option value="2014">2014</option>
-                  <option value="2015">2015</option>
+                  <option value="2013">2013</option>
+                  <option value="2012">2012</option>
+                  <option value="2011">2011</option>
+                  <option value="2010">2010</option>
               </select>
           </div></td>
     <td>    <div id="category-selector">
@@ -196,17 +186,12 @@ $(document).ready(function () {
   </tr>
 </table>
 
-    <svg id="stackBarChart" width="1100" height="400">
+    <svg id="stackBarChart" width="1" height="4">
         <g id="xAxis3"></g>
         <g id="yAxis3"></g>
         <g id="bars3"></g>
     </svg>
 
-    <svg id="multiLineChart" width="1100" height="400">
-        <g id="xAxis4"></g>
-        <g id="yAxis4"></g>
-        <g id="bars4"></g>
-    </svg>
 </div>
 
 <!--
@@ -221,6 +206,7 @@ $(document).ready(function () {
 window.onload = function ()
 {
   LoadData();
+  setTimeout(function(){SecondCharts(); return;}, 10000);
 }
 
 d3.select("button")
